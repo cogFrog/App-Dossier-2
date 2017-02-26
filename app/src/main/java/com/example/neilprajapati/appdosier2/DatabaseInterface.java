@@ -1,7 +1,12 @@
 package com.example.neilprajapati.appdosier2;
 
+import android.annotation.TargetApi;
+import android.os.Build;
 import android.support.annotation.NonNull;
 
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.Task;
+import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.ChildEventListener;
@@ -13,6 +18,9 @@ import com.google.firebase.database.GenericTypeIndicator;
 import com.google.firebase.database.ValueEventListener;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Date;
 import java.util.List;
 
 /**
@@ -51,6 +59,9 @@ import java.util.List;
  *                      9: obj9
  *                  ...
  *
+ *
+ * ISSUES: it overwrites data
+ *      history -1 index
  */
 public final class DatabaseInterface {
     private static DatabaseInterface databseInstance;
@@ -67,23 +78,18 @@ public final class DatabaseInterface {
 
     //balance
     private Balance balance;
-    public static final int MAX_ONE_TIME_STORED = 10; //how many one time $$ changes are stored in balance
+    //public static final int MAX_ONE_TIME_STORED = 10; //how many one time $$ changes are stored in balance
 
     //tags
     private List<String> tags;
 
     private DatabaseInterface(){
-        try {
-            mFirebaseAuth = FirebaseAuth.getInstance();
-            mDatabase = FirebaseDatabase.getInstance().getReference();
-            mFirebaseUser = mFirebaseAuth.getCurrentUser();
-            if(mFirebaseUser == null) return;
+        mFirebaseAuth = FirebaseAuth.getInstance();
+        mFirebaseUser = mFirebaseAuth.getCurrentUser();
+        mDatabase = FirebaseDatabase.getInstance().getReference();
+        if(mFirebaseUser == null) return;
+        mUserId = mFirebaseUser.getUid();
 
-            mUserId = mFirebaseUser.getUid();
-
-        } catch(Exception e){
-            return;
-        }
         initializeBalanceAndTags();
     }
 
@@ -93,29 +99,62 @@ public final class DatabaseInterface {
 
         //retrieve from db. If there is nothing in db, it won't be called
         //when something is added, itll overwrite the balance and tag objs created above.
-        mDatabase.child("users").child(mUserId).child("init").child("balance").addListenerForSingleValueEvent(new ValueEventListener() {
+        mDatabase.child("users").child(mUserId).child("balance").addChildEventListener(new ChildEventListener() {
             @Override
-            public void onDataChange(DataSnapshot dataSnapshot) {
+            public void onChildAdded(DataSnapshot dataSnapshot, String s) {
+                if(dataSnapshot.getValue() == null) return;
                 Balance tmp = dataSnapshot.getValue(Balance.class);
-                //balance = tmp!=null?tmp:balance;
-                mDatabase.child("users").child(mUserId).child("balance").child("obj").addChildEventListener(new BalanceListener());
+                System.out.println("Inside: "+tmp.getOneTimeMoneyChanges() + ", " + tmp.getContinousMoneyChanges());
+                balance = tmp;
+                balance.cleanFields();
                 balanceReady = true;
             }
 
+            @Override
+            public void onChildChanged(DataSnapshot dataSnapshot, String s) {
+
+            }
+
+            @Override
+            public void onChildRemoved(DataSnapshot dataSnapshot) {
+
+            }
+
+            @Override
+            public void onChildMoved(DataSnapshot dataSnapshot, String s) {
+
+            }
+
+            @Override
             public void onCancelled(DatabaseError databaseError) {
-                System.out.println("Canceled");
+
             }
         });
 
         //retrieve tags
-        mDatabase.child("users").child(mUserId).child("tags").addListenerForSingleValueEvent(new ValueEventListener() {
+        mDatabase.child("users").child(mUserId).child("tags").addChildEventListener(new ChildEventListener() {
             @Override
-            public void onDataChange(DataSnapshot dataSnapshot) {
-                GenericTypeIndicator<List<String>> t = new GenericTypeIndicator<List<String>>() {};
-                tags = dataSnapshot.getValue(t);
+            public void onChildAdded(DataSnapshot dataSnapshot, String s) {
+                tags.add( (String) dataSnapshot.getValue());
                 tagsReady = true;
             }
 
+            @Override
+            public void onChildChanged(DataSnapshot dataSnapshot, String s) {
+
+            }
+
+            @Override
+            public void onChildRemoved(DataSnapshot dataSnapshot) {
+
+            }
+
+            @Override
+            public void onChildMoved(DataSnapshot dataSnapshot, String s) {
+
+            }
+
+            @Override
             public void onCancelled(DatabaseError databaseError) {
 
             }
@@ -129,72 +168,113 @@ public final class DatabaseInterface {
         return mUserId != null;
     }
 
-    public String getUserName(){
-        if(mUserId == null) throw new IllegalStateException("User not signed in");
-        return mFirebaseUser.getDisplayName();
-    }
+    public void signIn(final String user, final String password, final SuccessListener listener){
+        mFirebaseAuth.signInWithEmailAndPassword(user, password).addOnCompleteListener(new OnCompleteListener<AuthResult>() {
+            @Override
+            public void onComplete(@NonNull Task<AuthResult> task) {
+                if (task.isSuccessful()) {
+                    mFirebaseUser = mFirebaseAuth.getCurrentUser();
+                    mUserId = mFirebaseUser.getUid();
+                    initializeBalanceAndTags();
+                    listener.onSuccess();
+                } else {
 
-    //TODO
-    public List<OneTimeMoneyChange> getRecentOneTimeMoneyChanges(int amtOfChanges){
-
-        if(!balanceReady || !isLogined()) throw new IllegalStateException("Balance was not ready or user isn't loggined in");
-        int amtCached = balance.getContinousMoneyChanges().size();
-
-
-        if(amtOfChanges > amtCached){
-
-            //intitialize
-            int startIndex, endIndex;
-            startIndex = amtCached/ MAX_ONE_TIME_STORED;
-
-            if(amtCached != -1){
-                endIndex = (amtOfChanges - amtCached)/ MAX_ONE_TIME_STORED + startIndex;
-            } else{
-                endIndex = Integer.MAX_VALUE; //just a really big value.
+                    listener.onFailure();
+                }
             }
+        });
 
-
-        }else {
-            List<OneTimeMoneyChange> l = balance.getOneTimeMoneyChanges();
-            return l.subList(l.size() - amtOfChanges - 1, l.size() - 1);
-        }
-        return null;
     }
+
+
+    public List<OneTimeMoneyChange> getRecentOneTimeMoneyChanges(int amtOfChanges) throws InterruptedException {
+        checkInited();
+
+        List<OneTimeMoneyChange> l = balance.getOneTimeMoneyChanges();
+        Collections.sort(l);
+        return l.subList(Math.max(0,l.size() - amtOfChanges - 1), l.size() - 1);
+    }
+
 
     public void appendMoneyChange(ContinousMoneyChange change) {
-        if(!balanceReady || !isLogined()) throw new IllegalStateException("Balance was not ready or user isn't loggined in");
-        mDatabase.child("users").child(mUserId).child("balance").child("obj").child("continousMoneyChanges").child(balance.getContinousMoneyChanges().size() + "").setValue(change);
-        balance.getContinousMoneyChanges().add(change);
+        checkInited();
+
+        balance.add(change);
+        mDatabase.child("users").child(mUserId).child("balance").child("obj").setValue(balance);
+
         if(!tags.contains(change.getTag())){
             //now we have to add it to the tags list
             //notice that we know the index of
             mDatabase.child("users").child(mUserId).child("tags").child(tags.size() + "").setValue(change.getTag());
             tags.add(change.getTag());
+            Collections.sort(tags);
         }
     }
 
     public void appendMoneyChange(OneTimeMoneyChange change){
         if(!balanceReady || !isLogined()) throw new IllegalStateException("Balance was not ready or user wasn't loggined in");
 
-        if(balance.getOneTimeMoneyChanges().size() > MAX_ONE_TIME_STORED){
-            //initialize vars
-            int index = balance.getContinousMoneyChanges().size()/ MAX_ONE_TIME_STORED - 1; //bc integer div, its work :D
-            int localIndex = balance.getContinousMoneyChanges().size() % MAX_ONE_TIME_STORED - 1; //bc yes
-            mDatabase.child("users").child(mUserId).child("history").child(""+index).child(localIndex + "").setValue(change);
+        balance.add(change);
+        mDatabase.child("users").child(mUserId).child("balance").child("obj").setValue(balance);
 
-        }else {
-            //just add it to balance obj
-            mDatabase.child("users").child(mUserId).child("balance").child("obj").child("oneTimeMoneyChanges").child(balance.getOneTimeMoneyChanges().size() + "").setValue(change);
-        }
-        balance.getOneTimeMoneyChanges().add(change);
 
         if(!tags.contains(change.getTag())){
             //now we have to add it to the tags list
             //notice that we know the index of
             mDatabase.child("users").child(mUserId).child("tags").child(tags.size() + "").setValue(change.getTag());
             tags.add(change.getTag());
+            Collections.sort(tags);
         }
     }
+
+    public double getBalance(){
+        checkInited();
+        return balance.getAmt();
+    }
+
+    public List<ContinousMoneyChange> getContinousMoneyChanges(){
+        checkInited();
+        return balance.getContinousMoneyChanges();
+    }
+
+    public List<String> searchTags(String fragment){
+        ArrayList<String> list = new ArrayList<>();
+        for(String str: tags)
+            if(str.contains(fragment))
+                list.add(str);
+        return list;
+    }
+
+    public void deleteChange(Date date){
+        checkInited();
+
+        //super cancer ineefficient but screw dis
+        for (int i = 0; i < balance.getContinousMoneyChanges().size(); i++) {
+            ContinousMoneyChange change = balance.getContinousMoneyChanges().get(i);
+            if (change.getDate().equals(date)) {
+                balance.getContinousMoneyChanges().remove(i);
+                mDatabase.child("users").child(mUserId).child("balance").child("obj").setValue(balance);
+                return;
+            }
+        }
+        for (int i = 0; i < balance.getOneTimeMoneyChanges().size(); i++) {
+            OneTimeMoneyChange change = balance.getOneTimeMoneyChanges().get(i);
+            if (change.getDate().equals(date)) {
+                balance.getOneTimeMoneyChanges().remove(i);
+                mDatabase.child("users").child(mUserId).child("balance").child("obj").setValue(balance);
+                return;
+            }
+        }
+    }
+
+
+
+    //==================================Checking if ready========================//
+
+    private void checkInited() {
+        if(!balanceReady || !isLogined()) throw new IllegalStateException("Balance was not ready or user isn't loggined in");
+    }
+
 
     public boolean isTagsReady() {
         return tagsReady;
@@ -219,34 +299,127 @@ public final class DatabaseInterface {
 
 
     //==================================INNER CLASSES========================//
-    /**
-     * Will never be called before the initilization value event occurs.
-     */
-    private class BalanceListener implements ChildEventListener{
-        @Override
-        public void onChildAdded(DataSnapshot dataSnapshot, String s) {
-            System.out.println("Inside BalanceListener" + dataSnapshot);
-            System.out.println("Inside BalanceListener" + dataSnapshot.getKey());
-        }
+    public interface SuccessListener {
+        void onSuccess();
+        void onFailure();
+    }
 
-        @Override
-        public void onChildChanged(DataSnapshot dataSnapshot, String s) {
 
-        }
+    //==================================OLD CODE using history========================//
+    /*
+    @TargetApi(Build.VERSION_CODES.N)
+    public List<OneTimeMoneyChange> getRecentOneTimeMoneyChanges(int amtOfChanges) throws InterruptedException {
 
-        @Override
-        public void onChildRemoved(DataSnapshot dataSnapshot) {
+        if(!balanceReady || !isLogined()) throw new IllegalStateException("Balance was not ready or user isn't loggined in");
+        int amtCached = balance.getOneTimeMoneyChanges().size();
 
-        }
+        if(amtOfChanges > amtCached){
 
-        @Override
-        public void onChildMoved(DataSnapshot dataSnapshot, String s) {
+            //initialize
+            final int startIndex, endIndex;
+            startIndex = amtCached/ MAX_ONE_TIME_STORED - 1;
 
-        }
+            if(amtCached != -1){
+                endIndex = (amtOfChanges - amtCached)/ MAX_ONE_TIME_STORED + startIndex;
+            } else{
+                endIndex = Integer.MAX_VALUE; //just a really big value.
+            }
 
-        @Override
-        public void onCancelled(DatabaseError databaseError) {
+            System.out.println(startIndex + ":"+ endIndex);
+            //thread to populate
+            Thread t = new Thread(){
+                @Override
+                public void run(){
+                    for (int i = startIndex; i <= endIndex; i++) {
+                        mDatabase.child("users").child(mUserId).child("history").child(""+i).addChildEventListener(new ChildEventListener() {
+                            @Override
+                            public void onChildAdded(DataSnapshot dataSnapshot, String s) {
+                                System.out.println("hehe");
+                                balance.getOneTimeMoneyChanges().add( dataSnapshot.getValue(OneTimeMoneyChange.class));
 
+                            }
+
+                            @Override
+                            public void onChildChanged(DataSnapshot dataSnapshot, String s) {
+
+                            }
+
+                            @Override
+                            public void onChildRemoved(DataSnapshot dataSnapshot) {
+
+                            }
+
+                            @Override
+                            public void onChildMoved(DataSnapshot dataSnapshot, String s) {
+
+                            }
+
+                            @Override
+                            public void onCancelled(DatabaseError databaseError) {
+
+                            }
+                        });
+
+                    }
+
+                }
+            };
+            t.start();
+            t.join();
+            System.out.println("thread state "+ t.isAlive());
+
+            Collections.sort(balance.getOneTimeMoneyChanges());
+
+            System.out.println(":"+balance.getOneTimeMoneyChanges().size());
+
+            return balance.getOneTimeMoneyChanges().subList(0, amtOfChanges); //subtract 1 bc 0th index is 1
+        }else {
+            List<OneTimeMoneyChange> l = balance.getOneTimeMoneyChanges();
+            Collections.sort(l);
+            l = l.subList(l.size() - amtOfChanges - 1, l.size() - 1);
+            return l;
         }
     }
+
+    public void appendMoneyChange(ContinousMoneyChange change) {
+        if(!balanceReady || !isLogined()) throw new IllegalStateException("Balance was not ready or user isn't loggined in");
+
+        balance.getContinousMoneyChanges().add(change);
+        mDatabase.child("users").child(mUserId).child("balance").child("obj").child("continousMoneyChanges").setValue(balance.getContinousMoneyChanges());
+
+
+        if(!tags.contains(change.getTag())){
+            //now we have to add it to the tags list
+            //notice that we know the index of
+            mDatabase.child("users").child(mUserId).child("tags").child(tags.size() + "").setValue(change.getTag());
+            tags.add(change.getTag());
+        }
+    }
+
+    public void appendMoneyChange(OneTimeMoneyChange change){
+        if(!balanceReady || !isLogined()) throw new IllegalStateException("Balance was not ready or user wasn't loggined in");
+
+        if(balance.getOneTimeMoneyChanges().size() > MAX_ONE_TIME_STORED){
+            //initialize vars
+            int index = balance.getOneTimeMoneyChanges().size()/ MAX_ONE_TIME_STORED - 1; //bc integer div, its work :D
+            int localIndex = balance.getOneTimeMoneyChanges().size() % MAX_ONE_TIME_STORED; //bc yes
+            mDatabase.child("users").child(mUserId).child("history").child(""+index).child(localIndex + "").setValue(change);
+            balance.getOneTimeMoneyChanges().add(change);
+        }else {
+            //just add it to balance obj
+            balance.getOneTimeMoneyChanges().add(change);
+            mDatabase.child("users").child(mUserId).child("balance").child("obj").setValue(balance);
+
+        }
+
+
+        if(!tags.contains(change.getTag())){
+            //now we have to add it to the tags list
+            //notice that we know the index of
+            mDatabase.child("users").child(mUserId).child("tags").child(tags.size() + "").setValue(change.getTag());
+            tags.add(change.getTag());
+        }
+    }
+     */
+
 }

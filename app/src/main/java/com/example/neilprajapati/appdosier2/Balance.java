@@ -3,6 +3,7 @@ package com.example.neilprajapati.appdosier2;
 import com.google.firebase.database.Exclude;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -18,7 +19,8 @@ public class Balance {
 
     //used by Firebase
     //==================================CONSTRUCTORS========================//
-    public Balance() {}
+    public Balance() {
+    }
 
     public Balance(double amt, List<ContinousMoneyChange> continousMoneyChanges, List<OneTimeMoneyChange> oneTimeMoneyChanges) {
         this.amt = amt;
@@ -46,6 +48,22 @@ public class Balance {
         return oneTimeMoneyChanges;
     }
 
+    //==================================Methods========================//
+    public void add(OneTimeMoneyChange change){
+        amt += change.getAmount();
+        oneTimeMoneyChanges.add(change);
+        Collections.sort(oneTimeMoneyChanges);
+    }
+    public void add(ContinousMoneyChange change){
+        continousMoneyChanges.add(change);
+        Collections.sort(continousMoneyChanges);
+    }
+
+    public void cleanFields(){
+        if(continousMoneyChanges == null) continousMoneyChanges = new ArrayList<>();
+        if(oneTimeMoneyChanges == null) oneTimeMoneyChanges = new ArrayList<>();
+
+    }
     //==================================STATS METHODS========================//
 
 

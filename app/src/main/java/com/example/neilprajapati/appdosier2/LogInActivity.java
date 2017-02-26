@@ -61,25 +61,46 @@ public class LogInActivity extends AppCompatActivity {
                     AlertDialog dialog = builder.create();
                     dialog.show();
                 } else {
-                    mFirebaseAuth.signInWithEmailAndPassword(email, password)
-                            .addOnCompleteListener(LogInActivity.this, new OnCompleteListener<AuthResult>() {
-                                @Override
-                                public void onComplete(@NonNull Task<AuthResult> task) {
-                                    if (task.isSuccessful()) {
-                                        Intent intent = new Intent(LogInActivity.this, MainActivity.class);
-                                        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                                        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK);
-                                        startActivity(intent);
-                                    } else {
-                                        AlertDialog.Builder builder = new AlertDialog.Builder(LogInActivity.this);
-                                        builder.setMessage(task.getException().getMessage())
-                                                .setTitle(R.string.login_error_title)
-                                                .setPositiveButton(android.R.string.ok, null);
-                                        AlertDialog dialog = builder.create();
-                                        dialog.show();
-                                    }
-                                }
-                            });
+                    DatabaseInterface dbi = DatabaseInterface.getDatabseInstance();
+                    dbi.signIn(email, password, new DatabaseInterface.SuccessListener() {
+                        @Override
+                        public void onSuccess() {
+                            Intent intent = new Intent(LogInActivity.this, MainActivity.class);
+                            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                            intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                            startActivity(intent);
+                        }
+
+                        @Override
+                        public void onFailure() {
+                            AlertDialog.Builder builder = new AlertDialog.Builder(LogInActivity.this);
+                            builder.setMessage("hih")
+                                    .setTitle(R.string.login_error_title)
+                                    .setPositiveButton(android.R.string.ok, null);
+                            AlertDialog dialog = builder.create();
+                            dialog.show();
+                        }
+                    });
+
+//                    mFirebaseAuth.signInWithEmailAndPassword(email, password)
+//                            .addOnCompleteListener(LogInActivity.this, new OnCompleteListener<AuthResult>() {
+//                                @Override
+//                                public void onComplete(@NonNull Task<AuthResult> task) {
+//                                    if (task.isSuccessful()) {
+//                                        Intent intent = new Intent(LogInActivity.this, MainActivity.class);
+//                                        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+//                                        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK);
+//                                        startActivity(intent);
+//                                    } else {
+//                                        AlertDialog.Builder builder = new AlertDialog.Builder(LogInActivity.this);
+//                                        builder.setMessage(task.getException().getMessage())
+//                                                .setTitle(R.string.login_error_title)
+//                                                .setPositiveButton(android.R.string.ok, null);
+//                                        AlertDialog dialog = builder.create();
+//                                        dialog.show();
+//                                    }
+//                                }
+//                            });
                 }
             }
         });

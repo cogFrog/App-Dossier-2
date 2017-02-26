@@ -5,7 +5,7 @@ import java.util.Date;
 /**
  * Created by neilprajapati on 2/21/17.
  */
-public class ContinousMoneyChange {
+public class ContinousMoneyChange implements Comparable<ContinousMoneyChange>{
     private double amountChange; //units: dollars
     private double timePeriodOfChange; //units: seconds
     private String tag;
@@ -57,5 +57,10 @@ public class ContinousMoneyChange {
         if(seconds > timePeriodOfChange)
             return new OneTimeMoneyChange(amountChange, tag + "@" + current.getTime());
         return null; //meaning its not ready yet
+    }
+
+    @Override
+    public int compareTo(ContinousMoneyChange o) {
+        return this.getDate().compareTo(o.getDate());
     }
 }

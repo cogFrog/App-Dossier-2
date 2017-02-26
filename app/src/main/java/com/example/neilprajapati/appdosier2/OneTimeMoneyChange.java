@@ -7,7 +7,7 @@ import java.util.Date;
 /**
  * Created by neilprajapati on 2/21/17.
  */
-public class OneTimeMoneyChange {
+public class OneTimeMoneyChange implements Comparable<OneTimeMoneyChange>{
     private double amount;
     private String tag;
     private Date date;
@@ -28,10 +28,12 @@ public class OneTimeMoneyChange {
         return tag;
     }
 
+    public Date getDate() {
+        return date;
+    }
 
     //====================================METHODS=======================//
     @Exclude
-
     public boolean isLoss(){
         return amount < 0;
     }
@@ -39,5 +41,16 @@ public class OneTimeMoneyChange {
     @Exclude
     public boolean isGain(){
         return amount > 0;
+    }
+
+
+    @Override
+    public String toString() {
+        return tag+": " + amount ;
+    }
+
+    @Override
+    public int compareTo(OneTimeMoneyChange o) {
+        return this.date.compareTo(o.date);
     }
 }

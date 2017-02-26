@@ -25,7 +25,9 @@ import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -48,13 +50,15 @@ public class MainActivity extends AppCompatActivity {
         mFirebaseUser = mFirebaseAuth.getCurrentUser();
         mDatabase = FirebaseDatabase.getInstance().getReference();
 
-        final DatabaseInterface dbi = DatabaseInterface.getDatabseInstance();
+
 
         if (mFirebaseUser == null) {
             // Not logged in, launch the Log In activity
             loadLogInView();
         } else {
             mUserId = mFirebaseUser.getUid();
+
+            final DatabaseInterface dbi = DatabaseInterface.getDatabseInstance();
 
             // Set up ListView
             final ListView listView = (ListView) findViewById(R.id.listView);
@@ -64,13 +68,28 @@ public class MainActivity extends AppCompatActivity {
             // Add items via the Button and EditText at the bottom of the view.
             final EditText text = (EditText) findViewById(R.id.todoText);
             final Button button = (Button) findViewById(R.id.addButton);
+
             button.setOnClickListener(new View.OnClickListener() {
+
+
                 public void onClick(View v) {
                     Item item = new Item(text.getText().toString());
                     mDatabase.child("users").child(mUserId).child("items").push().setValue(item);
-                    System.out.println(dbi.isBalanceReady());
-                    dbi.appendMoneyChange(new ContinousMoneyChange(12, 23, text.getText().toString()));
+                    System.out.println("MainActivity.onClick");
+
+
+
+                    String f = text.getText().toString();
+
+                    dbi.appendMoneyChange(new ContinousMoneyChange(5, 890, f));
+                    System.out.println(dbi.searchTags("jk"));
+
                     text.setText("");
+
+                    List<ContinousMoneyChange> l = dbi.getContinousMoneyChanges();
+                    text.setText("" + l);
+
+
                 }
             });
 
