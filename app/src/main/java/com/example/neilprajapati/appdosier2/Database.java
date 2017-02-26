@@ -1,7 +1,5 @@
 package com.example.neilprajapati.appdosier2;
 
-import android.annotation.TargetApi;
-import android.os.Build;
 import android.support.annotation.NonNull;
 
 import com.google.android.gms.tasks.OnCompleteListener;
@@ -14,12 +12,9 @@ import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
-import com.google.firebase.database.GenericTypeIndicator;
-import com.google.firebase.database.ValueEventListener;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 
@@ -38,33 +33,11 @@ import java.util.List;
  *                          0: obj0
  *                          1: obj1
  *                          ...
- *                          9: obj9
  *                      -amt
  *
- *               tags
-*                    obj:
- *                      0: grocery
- *                      1: ...
- *                      ....
- *              history
- *                  0:
- *                      0: obj0
- *                      1: obj1
- *                      ...
- *                      9: obj9
- *                  1:
- *                      0: obj0
- *                      1: obj1
- *                      ...
- *                      9: obj9
- *                  ...
- *
- *
- * ISSUES: it overwrites data
- *      history -1 index
  */
-public final class DatabaseInterface {
-    private static DatabaseInterface databseInstance;
+public final class Database {
+    private static Database databaseInstance;
 
 
     //fire base
@@ -74,7 +47,7 @@ public final class DatabaseInterface {
     private String mUserId;
 
     //check if firebase is ready
-    private boolean tagsReady = false, balanceReady = false, historyReady = false; //historyRead will reset to false when a request is made to load more history
+    private boolean tagsReady = false, balanceReady = false;//, historyReady = false; //historyRead will reset to false when a request is made to load more history
 
     //balance
     private Balance balance;
@@ -83,7 +56,7 @@ public final class DatabaseInterface {
     //tags
     private List<String> tags;
 
-    private DatabaseInterface(){
+    private Database(){
         mFirebaseAuth = FirebaseAuth.getInstance();
         mFirebaseUser = mFirebaseAuth.getCurrentUser();
         mDatabase = FirebaseDatabase.getInstance().getReference();
@@ -161,7 +134,7 @@ public final class DatabaseInterface {
         });
     }
 
-    //==================================Interfacing with Databse Methods========================//
+    //==================================Interfacing with Database Methods========================//
 
 
     public boolean isLogined(){
@@ -229,6 +202,9 @@ public final class DatabaseInterface {
 
     public double getBalance(){
         checkInited();
+
+
+
         return balance.getAmt();
     }
 
@@ -267,7 +243,28 @@ public final class DatabaseInterface {
         }
     }
 
+    public void editOneTimeMoneyChange(Date date, double newAmt, String newTag){
+        checkInited();
+        for (int i = 0; i < balance.getOneTimeMoneyChanges().size(); i++) {
+            OneTimeMoneyChange change = balance.getOneTimeMoneyChanges().get(i);
+            if (change.getDate().equals(date)) {
+                balance.getOneTimeMoneyChanges().set(i, new OneTimeMoneyChange(newAmt, newTag));
+                mDatabase.child("users").child(mUserId).child("balance").child("obj").setValue(balance);
+            }
+        }
+    }
 
+    public void editContineousMoneyChange(Date date, double newAmt, double newTimePeriodOfChange, String newTag){
+        checkInited();
+        for (int i = 0; i < balance.getContinousMoneyChanges().size(); i++) {
+            ContinousMoneyChange change = balance.getContinousMoneyChanges().get(i);
+            if (change.getDate().equals(date)) {
+                balance.getContinousMoneyChanges().set(i, new ContinousMoneyChange(newAmt, newTimePeriodOfChange, newTag));
+                mDatabase.child("users").child(mUserId).child("balance").child("obj").setValue(balance);
+                return;
+            }
+        }
+    }
 
     //==================================Checking if ready========================//
 
@@ -280,21 +277,22 @@ public final class DatabaseInterface {
         return tagsReady;
     }
 
+    //    public boolean isHistoryReady() {
+    //        return historyReady;
+    //    }
+
     public boolean isBalanceReady() {
         return balanceReady;
     }
 
-    public boolean isHistoryReady() {
-        return historyReady;
-    }
 
     //==================================FACTORY METHOD========================//
 
     @NonNull
-    public static DatabaseInterface getDatabseInstance(){
-        if(databseInstance != null) return databseInstance;
-        databseInstance = new DatabaseInterface();
-        return databseInstance;
+    public static Database getDatabaseInstance(){
+        if(databaseInstance != null) return databaseInstance;
+        databaseInstance = new Database();
+        return databaseInstance;
     }
 
 
@@ -306,7 +304,47 @@ public final class DatabaseInterface {
 
 
     //==================================OLD CODE using history========================//
+
+    /**
+     * JSON layout
+     *  root
+     *      -users
+     *          -uid
+     *              balance
+     *                  obj:
+     *                      -cont:
+     *                          0: obj0
+     *                          1: obj1
+     *                          ...
+     *                      -onetime:
+     *                          0: obj0
+     *                          1: obj1
+     *                          ...
+     *                          9: obj9
+     *                      -amt
+     *
+     *               tags
+     *                    obj:
+     *                      0: grocery
+     *                      1: ...
+     *                      ....
+     *              history
+     *                  0:
+     *                      0: obj0
+     *                      1: obj1
+     *                      ...
+     *                      9: obj9
+     *                  1:
+     *                      0: obj0
+     *                      1: obj1
+     *                      ...
+     *                      9: obj9
+     *                  ...
+     *
+     *
+     */
     /*
+
     @TargetApi(Build.VERSION_CODES.N)
     public List<OneTimeMoneyChange> getRecentOneTimeMoneyChanges(int amtOfChanges) throws InterruptedException {
 

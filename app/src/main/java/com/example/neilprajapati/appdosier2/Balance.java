@@ -36,7 +36,16 @@ public class Balance {
     }
     //==================================GETTERS========================//
 
+    public void calculateNewBalance(){
+        for(ContinousMoneyChange change: continousMoneyChanges)
+        {
+            OneTimeMoneyChange p = change.getMoneyChange();
+            if(p != null) add(p);
+        }
+    }
+
     public double getAmt() {
+        calculateNewBalance();
         return amt;
     }
 

@@ -2,8 +2,6 @@ package com.example.neilprajapati.appdosier2;
 
 import android.content.Intent;
 import android.os.Bundle;
-import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.View;
@@ -24,9 +22,6 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
@@ -58,7 +53,7 @@ public class MainActivity extends AppCompatActivity {
         } else {
             mUserId = mFirebaseUser.getUid();
 
-            final DatabaseInterface dbi = DatabaseInterface.getDatabseInstance();
+            final Database dbi = Database.getDatabaseInstance();
 
             // Set up ListView
             final ListView listView = (ListView) findViewById(R.id.listView);

@@ -22,7 +22,7 @@ public class ContinousMoneyChange implements Comparable<ContinousMoneyChange>{
     /**
      *
      * @param amountChange the amount the balance changes every timePeriodOfChange
-     * @param timePeriodOfChange the gap of time between 2 changes.
+     * @param timePeriodOfChange the gap of time between 2 changes. units: seconds :D
      */
     public ContinousMoneyChange(double amountChange, double timePeriodOfChange, String tag) {
         this.amountChange = amountChange;
@@ -48,14 +48,14 @@ public class ContinousMoneyChange implements Comparable<ContinousMoneyChange>{
     }
 
     /**
-     *
+     * For internal use in balance class.
      * @return OneTimeChange represeting the paycheck if paycheck comes, otherwise null.
      */
     public OneTimeMoneyChange getMoneyChange() {
         Date current = new Date();
         double seconds = (current.getTime() - date.getTime())/1000; //bc converting mil to base unit
         if(seconds > timePeriodOfChange)
-            return new OneTimeMoneyChange(amountChange, tag + "@" + current.getTime());
+            return new OneTimeMoneyChange(seconds/timePeriodOfChange * amountChange, tag + ".continuous@" + current.getTime());
         return null; //meaning its not ready yet
     }
 
