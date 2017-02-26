@@ -1,5 +1,7 @@
 package com.example.neilprajapati.appdosier2;
 
+import com.google.firebase.database.Exclude;
+
 import java.util.Date;
 
 /**
@@ -51,6 +53,7 @@ public class ContinousMoneyChange implements Comparable<ContinousMoneyChange>{
      * For internal use in balance class.
      * @return OneTimeChange represeting the paycheck if paycheck comes, otherwise null.
      */
+    @Exclude
     public OneTimeMoneyChange getMoneyChange() {
         Date current = new Date();
         double seconds = (current.getTime() - date.getTime())/1000; //bc converting mil to base unit

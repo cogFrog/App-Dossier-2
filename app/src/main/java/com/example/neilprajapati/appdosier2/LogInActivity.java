@@ -70,7 +70,7 @@ public class LogInActivity extends AppCompatActivity {
                         @Override
                         public void onFailure() {
                             AlertDialog.Builder builder = new AlertDialog.Builder(LogInActivity.this);
-                            builder.setMessage("hih")
+                            builder.setMessage("Login failed")
                                     .setTitle(R.string.login_error_title)
                                     .setPositiveButton(android.R.string.ok, null);
                             AlertDialog dialog = builder.create();
