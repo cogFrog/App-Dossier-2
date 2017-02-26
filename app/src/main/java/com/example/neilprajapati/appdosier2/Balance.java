@@ -1,12 +1,14 @@
 package com.example.neilprajapati.appdosier2;
 
+import com.google.firebase.database.Exclude;
+
 import java.util.ArrayList;
 import java.util.List;
 
 /**
  * TODO:
  *  update method.
- *  statistics methods on what ur spending alot of etc
+ *  statistics methods on what ur spending a lot of etc
  *  yeah.
  */
 public class Balance {

@@ -24,6 +24,7 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 
 public class MainActivity extends AppCompatActivity {
@@ -41,10 +42,13 @@ public class MainActivity extends AppCompatActivity {
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
+
         // Initialize Firebase Auth and Database Reference
         mFirebaseAuth = FirebaseAuth.getInstance();
         mFirebaseUser = mFirebaseAuth.getCurrentUser();
         mDatabase = FirebaseDatabase.getInstance().getReference();
+
+        final DatabaseInterface dbi = DatabaseInterface.getDatabseInstance();
 
         if (mFirebaseUser == null) {
             // Not logged in, launch the Log In activity
@@ -64,6 +68,8 @@ public class MainActivity extends AppCompatActivity {
                 public void onClick(View v) {
                     Item item = new Item(text.getText().toString());
                     mDatabase.child("users").child(mUserId).child("items").push().setValue(item);
+                    System.out.println(dbi.isBalanceReady());
+                    dbi.appendMoneyChange(new ContinousMoneyChange(12, 23, text.getText().toString()));
                     text.setText("");
                 }
             });
