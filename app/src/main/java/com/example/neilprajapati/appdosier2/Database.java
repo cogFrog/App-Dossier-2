@@ -49,6 +49,8 @@ public final class Database {
     //check if firebase is ready
     private boolean tagsReady = false, balanceReady = false;//, historyReady = false; //historyRead will reset to false when a request is made to load more history
 
+    private ArrayList<ReadyListener> readyListeners;
+
     //balance
     private Balance balance;
     //public static final int MAX_ONE_TIME_STORED = 10; //how many one time $$ changes are stored in balance
@@ -57,6 +59,8 @@ public final class Database {
     private List<String> tags;
 
     private Database(){
+        readyListeners = new ArrayList<>();
+
         mFirebaseAuth = FirebaseAuth.getInstance();
         mFirebaseUser = mFirebaseAuth.getCurrentUser();
         mDatabase = FirebaseDatabase.getInstance().getReference();
@@ -81,6 +85,7 @@ public final class Database {
                 balance = tmp;
                 balance.cleanFields();
                 balanceReady = true;
+                notifyAllOnReadyListeners();
             }
 
             @Override
@@ -110,6 +115,7 @@ public final class Database {
             public void onChildAdded(DataSnapshot dataSnapshot, String s) {
                 tags.add( (String) dataSnapshot.getValue());
                 tagsReady = true;
+                notifyAllOnReadyListeners();
             }
 
             @Override
@@ -298,6 +304,15 @@ public final class Database {
         return balanceReady;
     }
 
+    public void addOnReadyListener(ReadyListener listener){
+        readyListeners.add(listener);
+    }
+
+    public void notifyAllOnReadyListeners(){
+        for(ReadyListener listener: readyListeners)
+            listener.onReady();
+        readyListeners.clear(); //since getting ready is a one time event
+    }
 
     //==================================FACTORY METHOD========================//
 
@@ -313,6 +328,10 @@ public final class Database {
     public interface SuccessListener {
         void onSuccess();
         void onFailure();
+    }
+
+    public interface ReadyListener{
+        void onReady();
     }
 
 

@@ -57,14 +57,19 @@ public class LogInActivity extends AppCompatActivity {
                     AlertDialog dialog = builder.create();
                     dialog.show();
                 } else {
-                    Database dbi = Database.getDatabaseInstance();
+                    final Database dbi = Database.getDatabaseInstance();
                     dbi.signIn(email, password, new Database.SuccessListener() {
                         @Override
                         public void onSuccess() {
-                            Intent intent = new Intent(LogInActivity.this, MainActivity.class);
-                            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                            intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK);
-                            startActivity(intent);
+                            dbi.addOnReadyListener(new Database.ReadyListener() {
+                                @Override
+                                public void onReady() {
+                                    Intent intent = new Intent(LogInActivity.this, MainActivity.class);
+                                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                                    intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                                    startActivity(intent);
+                                }
+                            });
                         }
 
                         @Override
