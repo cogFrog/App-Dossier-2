@@ -159,6 +159,22 @@ public final class Database {
 
     }
 
+    public void signUp(final String email, final String password, final SuccessListener listener){
+        mFirebaseAuth.createUserWithEmailAndPassword(email, password)
+                .addOnCompleteListener(new OnCompleteListener<AuthResult>() {
+                    @Override
+                    public void onComplete(@NonNull Task<AuthResult> task) {
+                        if (task.isSuccessful()) {
+                            mFirebaseUser = mFirebaseAuth.getCurrentUser();
+                            mUserId = mFirebaseUser.getUid();
+                            initializeBalanceAndTags();
+                            listener.onSuccess();
+                        } else {
+                            listener.onFailure();
+                        }
+                    }
+                });
+    }
 
     public List<OneTimeMoneyChange> getRecentOneTimeMoneyChanges(int amtOfChanges) throws InterruptedException {
         checkInited();
@@ -202,9 +218,6 @@ public final class Database {
 
     public double getBalance(){
         checkInited();
-
-
-
         return balance.getAmt();
     }
 
