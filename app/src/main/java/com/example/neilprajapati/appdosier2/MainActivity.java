@@ -103,7 +103,7 @@ public class MainActivity extends AppCompatActivity {
                         appendMoneyChange(
                                 new OneTimeMoneyChange(
                                         +Integer.parseInt(unitQuantity.getText().toString())*Double.parseDouble(moneyChangeAmount.getText().toString()),
-                                        textView.getText().toString()
+                                        textView.getText().toString().trim()
                                 )
                         );
 
@@ -176,7 +176,7 @@ public class MainActivity extends AppCompatActivity {
                     while (pendingTags.size() > 0) {
                         String tagInQueue = pendingTags.poll();
                         if (!tags.contains(tagInQueue))
-                            tags.add(tagInQueue);
+                            mDatabase.child("users").child(mUserId).child("tags").push().setValue(tagInQueue);
                     }
                     Collections.sort(tags);
                 }

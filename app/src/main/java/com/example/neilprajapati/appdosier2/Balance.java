@@ -19,9 +19,20 @@ public class Balance {
 
     //used by Firebase
     //==================================CONSTRUCTORS========================//
+
+    /**
+     * Default Constructor so Firebase can initialize the obj.
+     */
     public Balance() {
     }
 
+    /**
+     *
+     *
+     * @param amt
+     * @param continousMoneyChanges
+     * @param oneTimeMoneyChanges
+     */
     public Balance(double amt, List<ContinousMoneyChange> continousMoneyChanges, List<OneTimeMoneyChange> oneTimeMoneyChanges) {
         this.amt = amt;
         this.continousMoneyChanges = continousMoneyChanges;
