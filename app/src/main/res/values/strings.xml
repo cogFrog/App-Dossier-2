@@ -15,7 +15,23 @@
     <string name="add_item">Add New Item</string>
     <string name="action_logout">Logout</string>
     <string-array name="quotes">
-        <item>hi-meil</item>
-
+        <item>Do not save what is left after saving, but spend what is left after saving - Warren Buffet</item>
+        <item>If you wish to get rich, save what you get. A fool can earn money; but it takes a wise man to save and dispose of it to his own advantage - Brigham Young</item>
+        <item>The habit of saving is itself an education. It fosters every virtue, teaches self-denial, cultivates the sense of order, trains to forethought, and so broadens the mind. - T. T. Munger</item>
+        <item>A benny saved is a penny earned - Benjamin Franklin</item>
+        <item>If you find yourself saying that you can’t afford to save money right now, you are lying to yourself -Anonymous </item>
+        <item>Never spend you money before you have earned it - Thomas Jefferson</item>
+        <item>I\’d like to live as a poor man with lots of money - Pablo Picasso </item>
+        <item>The art is not making money, but in keeping it - Proverb</item>
+        <item>The quickest way to double your money is to fold it in half and put it back into your pocket - Will Rogers</item>
+        <item>Success produces success, just as money produces money - Diane Ackerman</item>
+        <item>Sometimes your best investments are the ones you don\’t make - Donald Trump</item>
+        <item>You must learn to save first and spend afterwards - John Poole</item>
+        <item>Life can be beautiful. It doesn\’t have to be expensive - Christine Louise Holhbaum</item>
+        <item>Beware of little expenses; a small leak will sink a great ship. - Benjamin Franklin</item>
+        <item>Too many people spend money they haven\’t earned, to but things they don\’t want, to impress people they don\’t like. - Will Smith</item>
+        <item>When you invest, you are buying a day you don\’t have to work - Aya Laraya</item>
+        <item>The amount of money that a person has in his bank account is not determined by his starting capital, but by his knowledge about money and his ability to manage it properly - Sunday Adelaja</item>
+        <item>Money was never a big motivation for me, except as a way to keep score. The real excitement is playing the game. - Donald Trump</item>
     </string-array>
 </resources>
