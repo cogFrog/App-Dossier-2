@@ -84,7 +84,7 @@ public class SignUpActivity extends AppCompatActivity {
     public void loadFirebaseStartingData(){
         FirebaseUser currentUser = mFirebaseAuth.getCurrentUser();
         DatabaseReference mDatabase = FirebaseDatabase.getInstance().getReference();
-        Balance b = new Balance(0, new ArrayList<ContinousMoneyChange>(), new ArrayList<OneTimeMoneyChange>());
+        Balance b = new Balance(0, new ArrayList<ContinuousMoneyChange>(), new ArrayList<OneTimeMoneyChange>());
         String uid = currentUser.getUid();
 
         mDatabase.child("users").child(uid).child("balance").child("obj").setValue(b);

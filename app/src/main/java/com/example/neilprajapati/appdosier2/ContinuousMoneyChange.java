@@ -5,9 +5,9 @@ import com.google.firebase.database.Exclude;
 import java.util.Date;
 
 /**
- * Reperesents period money changes such as taxes and jobs
+ * Represents period money changes such as taxes and jobs
  */
-public class ContinousMoneyChange implements Comparable<ContinousMoneyChange>{
+public class ContinuousMoneyChange implements Comparable<ContinuousMoneyChange>{
     private double amountChange; //amount of money gained or lost every period. units: dollars
     private double timePeriodOfChange; //the period between each lost. units: seconds
     private String tag; //the category of the money.
@@ -21,7 +21,7 @@ public class ContinousMoneyChange implements Comparable<ContinousMoneyChange>{
     /**
      * Default Constructor for firebase to use.
      */
-    public ContinousMoneyChange() {
+    public ContinuousMoneyChange() {
     }
 
     /**
@@ -29,7 +29,7 @@ public class ContinousMoneyChange implements Comparable<ContinousMoneyChange>{
      * @param amountChange the amount the balance changes every timePeriodOfChange
      * @param timePeriodOfChange the gap of time between 2 changes. units: seconds :D
      */
-    public ContinousMoneyChange(double amountChange, double timePeriodOfChange, String tag) {
+    public ContinuousMoneyChange(double amountChange, double timePeriodOfChange, String tag) {
         this.amountChange = amountChange;
         this.timePeriodOfChange = timePeriodOfChange;
         this.tag = tag;
@@ -86,12 +86,12 @@ public class ContinousMoneyChange implements Comparable<ContinousMoneyChange>{
     }
 
     /**
-     * Compares 2 ContineousMoneyChange Objects
+     * Compares 2 ContinuousMoneyChange Objects
      * @param o other object
-     * @return the comparasion value.
+     * @return the comparison value.
      */
     @Override
-    public int compareTo(ContinousMoneyChange o) {
+    public int compareTo(ContinuousMoneyChange o) {
         return this.getDate().compareTo(o.getDate());
     }
 }

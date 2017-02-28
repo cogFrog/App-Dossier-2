@@ -1,7 +1,5 @@
 package com.example.neilprajapati.appdosier2;
 
-import com.google.firebase.database.Exclude;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -11,7 +9,7 @@ import java.util.List;
  */
 public class Balance {
     private double amt; //the amount of money currently in the balance
-    private List<ContinousMoneyChange> continousMoneyChanges; //the active contineous money changes applied on the balance
+    private List<ContinuousMoneyChange> continuousMoneyChanges; //the active contineous money changes applied on the balance
     private List<OneTimeMoneyChange> oneTimeMoneyChanges; //simply logs these for future uses
 
     //used by Firebase
@@ -27,32 +25,32 @@ public class Balance {
      * Constructs a Balance object
      *
      * @param amt amount of money in the balance
-     * @param continousMoneyChanges the list of active contineous money changes.
+     * @param continuousMoneyChanges the list of active continuous money changes.
      * @param oneTimeMoneyChanges the history of oneTime Money Changes.
      */
-    public Balance(double amt, List<ContinousMoneyChange> continousMoneyChanges, List<OneTimeMoneyChange> oneTimeMoneyChanges) {
+    public Balance(double amt, List<ContinuousMoneyChange> continuousMoneyChanges, List<OneTimeMoneyChange> oneTimeMoneyChanges) {
         this.amt = amt;
-        this.continousMoneyChanges = continousMoneyChanges;
+        this.continuousMoneyChanges = continuousMoneyChanges;
         this.oneTimeMoneyChanges = oneTimeMoneyChanges;
     }
 
     /**
-     * Creates a Balance object with no history of oneTime Money Changes or contineous money changes
+     * Creates a Balance object with no history of oneTime Money Changes or continuous money changes
      * @param amt the current balance
      */
     public Balance(double amt) {
         this.amt = amt;
-        this.continousMoneyChanges = new ArrayList<>();
+        this.continuousMoneyChanges = new ArrayList<>();
         this.oneTimeMoneyChanges = new ArrayList<>();
 
     }
     //==================================GETTERS========================//
 
     /**
-     * updates amt and oneTimeMoneyChanges by applying the contineousMoneyChanges.
+     * updates amt and oneTimeMoneyChanges by applying the continuousMoneyChanges.
      */
     public void calculateNewBalance(){
-        for(ContinousMoneyChange change: continousMoneyChanges)
+        for(ContinuousMoneyChange change: continuousMoneyChanges)
         {
             OneTimeMoneyChange p = change.getMoneyChange();
             if(p != null) add(p);
@@ -69,11 +67,11 @@ public class Balance {
     }
 
     /**
-     * gets the contineous money changes
-     * @return contineousMoneyChanges list
+     * gets the continuous money changes
+     * @return continuousMoneyChanges list
      */
-    public List<ContinousMoneyChange> getContinousMoneyChanges() {
-        return continousMoneyChanges;
+    public List<ContinuousMoneyChange> getContinuousMoneyChanges() {
+        return continuousMoneyChanges;
     }
 
     /**
@@ -97,12 +95,12 @@ public class Balance {
     }
 
     /**
-     * adds a contineousMoneyChange to balance
-     * @param change the contineousMoneyChange to add.
+     * adds a continuousMoneyChange to balance
+     * @param change the continuousMoneyChange to add.
      */
-    public void add(ContinousMoneyChange change){
-        continousMoneyChanges.add(change);
-        Collections.sort(continousMoneyChanges);
+    public void add(ContinuousMoneyChange change){
+        continuousMoneyChanges.add(change);
+        Collections.sort(continuousMoneyChanges);
     }
 
 
@@ -111,7 +109,7 @@ public class Balance {
      * has no node for the variables. This can cause null pointer exception.
      */
     public void cleanFields(){
-        if(continousMoneyChanges == null) continousMoneyChanges = new ArrayList<>();
+        if(continuousMoneyChanges == null) continuousMoneyChanges = new ArrayList<>();
         if(oneTimeMoneyChanges == null) oneTimeMoneyChanges = new ArrayList<>();
 
     }
