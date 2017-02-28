@@ -13,6 +13,11 @@ import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+
+import java.util.ArrayList;
 
 public class SignUpActivity extends AppCompatActivity {
 
@@ -50,50 +55,41 @@ public class SignUpActivity extends AppCompatActivity {
                     AlertDialog dialog = builder.create();
                     dialog.show();
                 } else {
-                    Database db = Database.getDatabaseInstance();
 
-                    db.signUp(email, password, new Database.SuccessListener() {
-                        @Override
-                        public void onSuccess() {
-                            Intent intent = new Intent(SignUpActivity.this, LogInActivity.class);
-                            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                            intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK);
-                            startActivity(intent);
-                        }
-
-                        @Override
-                        public void onFailure() {
-                            AlertDialog.Builder builder = new AlertDialog.Builder(SignUpActivity.this);
-                            builder.setMessage("Sign Up Failed")
-                                    .setTitle(R.string.login_error_title)
-                                    .setPositiveButton(android.R.string.ok, null);
-                            AlertDialog dialog = builder.create();
-                            dialog.show();
-                        }
-                    });
-
-//                    mFirebaseAuth.createUserWithEmailAndPassword(email, password)
-//                            .addOnCompleteListener(SignUpActivity.this, new OnCompleteListener<AuthResult>() {
-//                                @Override
-//                                public void onComplete(@NonNull Task<AuthResult> task) {
-//                                    if (task.isSuccessful()) {
-//                                        Intent intent = new Intent(SignUpActivity.this, MainActivity.class);
-//                                        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-//                                        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK);
-//                                        startActivity(intent);
-//                                    } else {
-//                                        AlertDialog.Builder builder = new AlertDialog.Builder(SignUpActivity.this);
-//                                        builder.setMessage(task.getException().getMessage())
-//                                                .setTitle(R.string.login_error_title)
-//                                                .setPositiveButton(android.R.string.ok, null);
-//                                        AlertDialog dialog = builder.create();
-//                                        dialog.show();
-//                                    }
-//                                }
-//                            });
+                    mFirebaseAuth.createUserWithEmailAndPassword(email, password)
+                            .addOnCompleteListener(SignUpActivity.this, new OnCompleteListener<AuthResult>() {
+                                @Override
+                                public void onComplete(@NonNull Task<AuthResult> task) {
+                                    if (task.isSuccessful()) {
+                                        loadFirebaseStartingData();
+                                        Intent intent = new Intent(SignUpActivity.this, MainActivity.class);
+                                        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                                        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                                        startActivity(intent);
+                                    } else {
+                                        AlertDialog.Builder builder = new AlertDialog.Builder(SignUpActivity.this);
+                                        builder.setMessage(task.getException().getMessage())
+                                                .setTitle(R.string.login_error_title)
+                                                .setPositiveButton(android.R.string.ok, null);
+                                        AlertDialog dialog = builder.create();
+                                        dialog.show();
+                                    }
+                                }
+                            });
                 }
             }
         });
+    }
+
+    public void loadFirebaseStartingData(){
+        FirebaseUser currentUser = mFirebaseAuth.getCurrentUser();
+        DatabaseReference mDatabase = FirebaseDatabase.getInstance().getReference();
+        Balance b = new Balance(0, new ArrayList<ContinousMoneyChange>(), new ArrayList<OneTimeMoneyChange>());
+        String uid = currentUser.getUid();
+
+        mDatabase.child("users").child(uid).child("balance").child("obj").setValue(b);
+        mDatabase.child("users").child(uid).child("tags").push().setValue("grocery");
+
     }
 
 }

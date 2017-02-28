@@ -1,17 +1,15 @@
 package com.example.neilprajapati.appdosier2;
 
 import android.content.Intent;
-import android.os.Bundle;
+import android.content.res.Resources;
 import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.Toolbar;
+import android.os.Bundle;
 import android.view.View;
-import android.view.Menu;
-import android.view.MenuItem;
-import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
+import android.widget.AutoCompleteTextView;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.ListView;
+import android.widget.TextView;
 
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
@@ -20,159 +18,239 @@ import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
-import com.google.firebase.database.ValueEventListener;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Queue;
+import java.util.Random;
 
 public class MainActivity extends AppCompatActivity {
+    private List<String> tags = new ArrayList<>(); //This is the list that would contain the tags.
 
     private FirebaseAuth mFirebaseAuth;
-    private FirebaseUser mFirebaseUser;
-
     private DatabaseReference mDatabase;
+    private FirebaseUser mFirebaseUser;
     private String mUserId;
+    private Balance balance;
+
+    private Queue<OneTimeMoneyChange> pendingOneTimeReqs;
+    private Queue<String> pendingTags;
+
+    private ArrayAdapter<String> adapter;
+    private AutoCompleteTextView textView;
+    private TextView moneyRemaining;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
-        setSupportActionBar(toolbar);
 
-
-        // Initialize Firebase Auth and Database Reference
         mFirebaseAuth = FirebaseAuth.getInstance();
         mFirebaseUser = mFirebaseAuth.getCurrentUser();
         mDatabase = FirebaseDatabase.getInstance().getReference();
+        System.out.println("starting app");
 
-
-
-        if (mFirebaseUser == null) {
-            // Not logged in, launch the Log In activity
-            loadLogInView();
-        } else {
+        if(mFirebaseUser == null){
+            System.out.println("user not loginned in");
+            Intent intent = new Intent(MainActivity.this, LogInActivity.class);
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK);
+            startActivity(intent);
+        } else{
             mUserId = mFirebaseUser.getUid();
 
-            final Database dbi = Database.getDatabaseInstance();
 
-            // Set up ListView
-            final ListView listView = (ListView) findViewById(R.id.listView);
-            final ArrayAdapter<String> adapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, android.R.id.text1);
-            listView.setAdapter(adapter);
-
-            // Add items via the Button and EditText at the bottom of the view.
-            final EditText text = (EditText) findViewById(R.id.todoText);
-            final Button button = (Button) findViewById(R.id.addButton);
-
-            button.setOnClickListener(new View.OnClickListener() {
+            quoteSetup();
 
 
+            setUpTags();
+            setUpBalance();
+
+
+            adapter = new ArrayAdapter<>(this, android.R.layout.simple_dropdown_item_1line, tags);
+            textView = (AutoCompleteTextView) findViewById(R.id.tagValue);
+            textView.setAdapter(adapter); // links the set of tags to the autocomplete text view
+
+            moneyRemaining = (TextView) findViewById(R.id.moneyRemaining);
+
+
+            final EditText moneyChangeAmount = (EditText) findViewById(R.id.moneyChangeValue);
+            final TextView unitQuantity = (TextView) findViewById(R.id.unitCount);
+
+            final Button addExpenseButton = (Button) findViewById(R.id.addExpense);
+            addExpenseButton.setOnClickListener(new View.OnClickListener() {
                 public void onClick(View v) {
-                    Item item = new Item(text.getText().toString());
-                    mDatabase.child("users").child(mUserId).child("items").push().setValue(item);
-                    System.out.println("MainActivity.onClick");
-
-
-
-                    String f = text.getText().toString();
-
-                    dbi.appendMoneyChange(new ContinousMoneyChange(5, 890, f));
-                    System.out.println(dbi.searchTags("jk"));
-
-                    text.setText("");
-
-                    List<ContinousMoneyChange> l = dbi.getContinousMoneyChanges();
-                    text.setText("" + l);
-
+                    System.out.println("INside tags: "+tags);
+                    if(moneyChangeAmount.getText().toString().matches("[-+]?\\d*\\.?\\d+") && !textView.getText().toString().equals(""))
+                        appendMoneyChange(
+                                new OneTimeMoneyChange(
+                                        -Integer.parseInt(unitQuantity.getText().toString())*Double.parseDouble(moneyChangeAmount.getText().toString()),
+                                        textView.getText().toString()
+                                )
+                        );
 
                 }
             });
 
-            // Use Firebase to populate the list.
-            mDatabase.child("users").child(mUserId).child("items").addChildEventListener(new ChildEventListener() {
+            final Button addIncomeButton = (Button) findViewById(R.id.addIncome);
+            addIncomeButton.setOnClickListener(new View.OnClickListener() {
+                public void onClick(View v) {
+                    System.out.println("INside tags: "+tags);
+                    if(moneyChangeAmount.getText().toString().matches("[-+]?\\d*\\.?\\d+") && !textView.getText().toString().equals(""))
+
+                        appendMoneyChange(
+                                new OneTimeMoneyChange(
+                                        +Integer.parseInt(unitQuantity.getText().toString())*Double.parseDouble(moneyChangeAmount.getText().toString()),
+                                        textView.getText().toString()
+                                )
+                        );
+
+                }
+            });
+
+            final Button logoutButton = (Button) findViewById(R.id.logoutButton);
+            logoutButton.setOnClickListener(new View.OnClickListener() {
                 @Override
-                public void onChildAdded(DataSnapshot dataSnapshot, String s) {
-                    if(dataSnapshot.child("title").getValue() != null)
-                        adapter.add((String) dataSnapshot.child("title").getValue());
-                    else{
-                        Item i = dataSnapshot.getValue(Item.class);
-                        adapter.add(i.getTitle());
-                        //Object first = dataSnapshot.getChildren().iterator().next().child("title").getValue();
-                        //adapter.add( (String) first);
+                public void onClick(View v) {
+                    mFirebaseAuth.signOut();
+                    Intent intent = new Intent(MainActivity.this, LogInActivity.class);
+                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                    intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                    startActivity(intent);
+                }
+            });
+
+        }
+
+
+    }
+
+    private void setUpBalance() {
+        pendingOneTimeReqs = new LinkedList<>();
+        mDatabase.child("users").child(mUserId).child("balance").addChildEventListener(new ChildEventListener() {
+            @Override
+            public void onChildAdded(DataSnapshot dataSnapshot, String s) {
+                if(dataSnapshot.getValue() == null) return;
+                balance = dataSnapshot.getValue(Balance.class);
+                balance.cleanFields();
+                while(pendingOneTimeReqs.size() > 0){
+                    balance.add(pendingOneTimeReqs.poll());
+                }
+                moneyRemaining.setText("$"+ balance.getAmt() +" remaining from your average income");
+            }
+
+            @Override
+            public void onChildChanged(DataSnapshot dataSnapshot, String s) {
+                balance = dataSnapshot.getValue(Balance.class);
+                balance.cleanFields();
+                moneyRemaining.setText("$"+ balance.getAmt() +" remaining from your average income");
+            }
+
+            @Override
+            public void onChildRemoved(DataSnapshot dataSnapshot) {
+
+            }
+
+            @Override
+            public void onChildMoved(DataSnapshot dataSnapshot, String s) {
+
+            }
+
+            @Override
+            public void onCancelled(DatabaseError databaseError) {
+                System.out.println("Inside: Canceled");
+            }
+        });
+    }
+
+    private void setUpTags() {
+        pendingTags = new LinkedList<>();
+
+
+        mDatabase.child("users").child(mUserId).child("tags").addChildEventListener(new ChildEventListener() {
+            @Override
+            public void onChildAdded(DataSnapshot dataSnapshot, String s) {
+                if(pendingTags.size() > 0) {
+                    while (pendingTags.size() > 0) {
+                        String tagInQueue = pendingTags.poll();
+                        if (!tags.contains(tagInQueue))
+                            tags.add(tagInQueue);
                     }
+                    Collections.sort(tags);
                 }
+                tags.add((String) dataSnapshot.getValue());
+                adapter.notifyDataSetChanged();
+                textView.setAdapter(adapter);
+            }
 
-                @Override
-                public void onChildChanged(DataSnapshot dataSnapshot, String s) {
+            @Override
+            public void onChildChanged(DataSnapshot dataSnapshot, String s) {
 
-                }
+            }
 
-                @Override
-                public void onChildRemoved(DataSnapshot dataSnapshot) {
-                    adapter.remove((String) dataSnapshot.child("title").getValue());
-                }
+            @Override
+            public void onChildRemoved(DataSnapshot dataSnapshot) {
 
-                @Override
-                public void onChildMoved(DataSnapshot dataSnapshot, String s) {
+            }
 
-                }
+            @Override
+            public void onChildMoved(DataSnapshot dataSnapshot, String s) {
 
-                @Override
-                public void onCancelled(DatabaseError databaseError) {
+            }
 
-                }
-            });
-            listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-                public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                    mDatabase.child("users").child(mUserId).child("items")
-                            .orderByChild("title")
-                            .equalTo((String) listView.getItemAtPosition(position))
-                            .addListenerForSingleValueEvent(new ValueEventListener() {
-                                @Override
-                                public void onDataChange(DataSnapshot dataSnapshot) {
-                                    if (dataSnapshot.hasChildren()) {
-                                        DataSnapshot firstChild = dataSnapshot.getChildren().iterator().next();
-                                        firstChild.getRef().removeValue();
-                                    }
-                                }
+            @Override
+            public void onCancelled(DatabaseError databaseError) {
 
-                                @Override
-                                public void onCancelled(DatabaseError databaseError) {
-
-                                }
-                            });
-                }
-            });
-        }
+            }
+        });
     }
 
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.menu_main, menu);
-        return true;
+    private void quoteSetup() {
+        Random rand = new Random();
+
+        Resources res = getResources();
+        String[] quotes = res.getStringArray(R.array.quotes);
+
+        TextView quoteBox = (TextView) findViewById(R.id.quoteBox);
+        int randomValue = rand.nextInt(quotes.length);
+        quoteBox.setText(quotes[randomValue]);
     }
 
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
-        int id = item.getItemId();
+    public void addUnit(View v) {
+        TextView unitQuantity = (TextView) findViewById(R.id.unitCount);
+        int currentValue = Integer.parseInt(unitQuantity.getText().toString());
 
-        //noinspection SimplifiableIfStatement
-        if (id == R.id.action_logout) {
-            mFirebaseAuth.signOut();
-            loadLogInView();
+        currentValue++;
+
+        unitQuantity.setText(currentValue + "");
+    }
+
+    public void removeUnit(View v) {
+        TextView unitQuantity = (TextView) findViewById(R.id.unitCount);
+        int currentValue = Integer.parseInt(unitQuantity.getText().toString());
+
+        if (currentValue > 1) {
+            currentValue--;
         }
 
-        return super.onOptionsItemSelected(item);
+        unitQuantity.setText(currentValue + "");
     }
 
-    private void loadLogInView() {
-        Intent intent = new Intent(this, LogInActivity.class);
-        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK);
-        startActivity(intent);
+    public void appendMoneyChange(OneTimeMoneyChange change){
+        if(balance == null){
+            pendingOneTimeReqs.add(change);
+            pendingTags.add(change.getTag());
+            return;
+        }
+        balance.add(change);
+        mDatabase.child("users").child(mUserId).child("balance").child("obj").setValue(balance);
+        if(!tags.contains(change.getTag())){
+            mDatabase.child("users").child(mUserId).child("tags").push().setValue(change.getTag());
+            //that is handled by the child listener
+//            tags.add(change.getTag());
+//            Collections.sort(tags);
+        }
     }
 }
