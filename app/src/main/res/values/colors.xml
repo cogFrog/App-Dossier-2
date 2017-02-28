@@ -4,5 +4,6 @@
     <color name="colorPrimaryDark">#8E63B4</color>
     <color name="colorPositiveAccent">#77DD77</color>
     <color name="colorNegativeAccent">#EE796B</color>
-    <color name="colorBackground">#6495ED</color>
+    <color name="colorNeutralAccentLight">#709EEF</color>
+    <color name="colorNeutralAccentDark">#6495ED</color>
 </resources>
