@@ -181,6 +181,7 @@ public class MainActivity extends AppCompatActivity {
                     Collections.sort(tags);
                 }
                 tags.add((String) dataSnapshot.getValue());
+                adapter.add((String) dataSnapshot.getValue());
                 adapter.notifyDataSetChanged();
                 textView.setAdapter(adapter);
             }
