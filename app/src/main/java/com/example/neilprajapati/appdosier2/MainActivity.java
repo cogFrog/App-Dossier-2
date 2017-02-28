@@ -54,7 +54,7 @@ public class MainActivity extends AppCompatActivity {
 
     /** 
      * Initializes the app functionality and views. If the user is not logged in, it also redirects the user to the login if they are not logged in.
-     * @param savedInstance If the activity is being re-initialized after previously being shut down then this Bundle contains the data it most recently supplied in onSaveInstanceState(Bundle). Note: Otherwise it is null.
+     * @param savedInstanceState If the activity is being re-initialized after previously being shut down then this Bundle contains the data it most recently supplied in onSaveInstanceState(Bundle). Note: Otherwise it is null.
     **/
    @Override
    protected void onCreate(Bundle savedInstanceState) {
